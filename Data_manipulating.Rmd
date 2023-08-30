@@ -1,0 +1,530 @@
+# Subsetting
+
+```{r}
+set.seed(123)
+df <- data.frame("col1" = sample(1:5),
+                 "col2" = sample(6:10),
+                 "col3" = sample(11:15))
+df <- df[sample(1:5),]; df$col2[c(1,3)] = NA
+df
+```
+
+```{r}
+df[2:4, "col2"]
+```
+
+```{r}
+df[(df$col1 <= 5 & df$col2 >= 5),]
+df[(df$col1 <= 5 | df$col2 >= 5),]
+```
+
+Omit NA values:
+
+```{r}
+df[which(df$col2 >= 7),]
+```
+
+```{r}
+sort(df$col1)
+sort(df$col1, decreasing = TRUE)
+sort(df$col2, na.last = TRUE)
+sort(df$col2, decreasing = TRUE, na.last = TRUE)
+```
+
+Order data.frame in a particular order:
+
+```{r}
+df[order(df$col2),]
+df[order(df$col1, df$col3),]
+```
+
+## plyr
+
+```{r}
+install.packages("plyr")
+```
+
+```{r}
+library(plyr)
+```
+
+Sort data.frame on the selected variable:
+
+```{r}
+arrange(df, col1)
+arrange(df, desc(col1))
+```
+
+Add new column:
+
+```{r}
+set.seed(1)
+df$col4 <- rnorm(5)
+df
+```
+
+Adding col using binding:
+
+```{r}
+set.seed(1)
+col5 <- rnorm(5, 2)
+df <- cbind(df, col5 = col5)
+df
+
+```
+
+Remove duplicating col: (third col)
+
+```{r}
+df <- df[,-3]
+df
+```
+
+# Summarizing data
+
+```{r}
+df_emp <- read.csv("./data/Baltimore_City_Employee_Salaries.csv")
+head(df_emp, 2)
+tail(df_emp, 2)
+```
+
+```{r}
+summary(df_emp)
+```
+
+```{r}
+str(df_emp)
+```
+
+```{r}
+quantile(df_emp$GrossPay,
+         # remove missing values
+         na.rm = TRUE)
+```
+
+```{r}
+quantile(df_emp$GrossPay,
+         # remove missing values
+         na.rm = TRUE,
+         probs = c(0.3, 0.6, 0.9))
+
+```
+
+Make table out of data:
+
+count the number of occurencies
+
+```{r}
+#table(df_emp$GrossPay, 
+      #useNA = "ifany")
+```
+
+## Missing values
+
+```{r}
+sum(is.na(df_emp$GrossPay))
+```
+
+Check if there is at least one NA:
+
+```{r}
+any(is.na(df_emp$GrossPay))
+```
+
+Check if every single value satisfy the condition:
+
+```{r}
+all(df_emp$GrossPay > 0)
+```
+
+Sum across columns (get the number of missing values):
+
+```{r}
+colSums(is.na(df_emp))
+```
+
+Check if all the values are not NA:
+
+```{r}
+all(colSums(is.na(df_emp)) == 0)
+```
+
+Count values with the specific parameter:
+
+```{r}
+table(df_emp$HireDate %in% c("2006/09/25 00:00:00+00"))
+```
+
+Get the rows with the specific parameter:
+
+```{r}
+df_emp[df_emp$HireDate %in% c("2006/09/25 00:00:00+00"),]
+```
+
+## Cross tabs
+
+```{r}
+data(UCBAdmissions)
+df_adm <- as.data.frame(UCBAdmissions)
+summary(df_adm)
+```
+
+From the above we take values of frequency, by Gender and Admit rate:
+
+```{r}
+cross_tabs <- xtabs(Freq ~ Gender + Admit,
+                    data = df_adm)
+cross_tabs
+```
+
+```{r}
+warpbreaks$replicate <- rep(1:9, len = 54)
+xt <- xtabs(breaks ~.,
+            data = warpbreaks)
+xt
+```
+
+```{r}
+ftable(xt)
+```
+
+## Getting an object size
+
+```{r}
+object.size(df_emp)
+print(object.size(df_emp), units = "Mb")
+```
+
+# Creating new variables
+
+We have to create sequences in order to index some part of the needed data
+
+```{r}
+library(datasets)
+df_iris <- iris
+head(df_iris)
+```
+
+```{r}
+df_iris$type_valid <- df_iris$Species %in% c("setosa",
+                                             "virginica")
+table(df_iris$type_valid)
+```
+
+```{r}
+df_iris
+```
+
+Simplified if-else construction: We set if condition, than the case if if sondition is true, then, else condition statement.
+
+```{r}
+df_iris$species_virginica <- ifelse(df_iris$Species == "virginica", TRUE, FALSE)
+```
+
+```{r}
+df_iris
+```
+
+```{r}
+table(df_iris$species_virginica, df_iris$species_virginica == TRUE)
+```
+
+## Cutting vars
+
+```{r}
+install.packages("Hmisc")
+```
+
+Dividing into groups by the var value:
+
+```{r}
+library(Hmisc)
+df_iris$species_groups <- cut2(df_iris$Sepal.Length, g = 4)
+table(df_iris$species_groups)
+```
+
+## Factor levels
+
+We need factors
+
+```{r}
+species <- sample(c("virginica","setosa", "versicolor"), 
+                         size = 50,
+                         replace = T)
+species_factor <- factor(species,
+                         levels = c("virginica","setosa", "versicolor"))
+relevel(species_factor,
+        ref = "virginica")
+```
+
+```{r}
+as.numeric(species_factor)
+```
+
+# Data reshaping
+
+```{r}
+install.packages("reshape2")
+```
+
+```{r}
+library(reshape2)
+library(datasets)
+```
+
+```{r}
+head(mtcars)
+```
+
+> The idea of melting is that we creating a data.frame with duplicated row names, each of the duplicated names corresponds to the MPG or HP measuerements.
+
+```{r}
+mtcars$carname <- rownames(mtcars)
+car_melted <- melt(mtcars,
+                   id = c("carname",
+                          "gear",
+                          "cyl"),
+                   measure.vars = c("mpg",
+                                    "hp"))
+car_melted
+```
+
+To see data depends on a specific variable :
+
+```{r}
+cyl_data <- dcast(car_melted,
+                  # take number of occurencies
+                  cyl ~ variable)
+cyl_data
+```
+
+```{r}
+cyl_data <- dcast(car_melted,
+                  # take meanvalue
+                  cyl ~ variable, mean)
+cyl_data
+```
+
+### Taking a summary on the data
+
+Taking an average over the specific parameter:
+
+```{r}
+head(InsectSprays)
+```
+
+```{r}
+tapply(InsectSprays$count,
+       InsectSprays$spray,
+       sum)
+```
+
+Take insect counts and split it by the type of teh spray:
+
+```{r}
+spray_types_counts <- split(InsectSprays$count,
+                            InsectSprays$spray)
+spray_types_counts
+```
+
+Sum among the list elements:
+
+spray occurencies count:
+
+```{r}
+spray_count <- lapply(spray_types_counts, sum)
+spray_count
+```
+
+## Using plyr
+
+```{r}
+library(plyr)
+ddply(InsectSprays,
+      .(spray),
+      summarize,
+      sum = sum(count))
+```
+
+# dplyr
+
+```{r}
+library(dplyr)
+```
+
+## select
+
+To look at subsets of columns.
+
+```{r}
+dim(df_emp)
+```
+
+```{r}
+str(df_emp)
+```
+
+```{r}
+names(df_emp)
+```
+
+```{r}
+library(dplyr)
+head(select(df_emp, Name:AgencyName))
+```
+
+See all except from:
+
+```{r}
+head(select(df_emp, -(Name:AgencyName)))
+```
+
+## filter
+
+```{r}
+filter(df_emp,
+       HireDate > "2019/07/23 00:00:00+00" & GrossPay > 35000)
+```
+
+## arrange
+
+Used for reordering the rows, based on the values of the column.
+
+Change the order of the date:
+
+```{r}
+df_emp <- arrange(df_emp,
+                  desc(HireDate))
+```
+
+```{r}
+head(df_emp,3)
+tail(df_emp, 10)
+```
+
+## rename
+
+```{r}
+df_emp <- rename(df_emp,
+                 objectID = OBJECTID)
+head(df_emp)
+```
+
+## mutate
+
+Used to transform existing variables or creating a new ones.
+
+```{r}
+df_emp <- mutate(df_emp, 
+                 grpay_detrend = GrossPay - mean(GrossPay, 
+                                                 na.rm = TRUE))
+```
+
+```{r}
+head(df_emp)
+```
+
+```{r}
+head(select(df_emp,
+            GrossPay,
+            grpay_detrend))
+```
+
+## group by
+
+Example: create categorical column based on the numeric value.
+
+```{r}
+df_emp <- mutate(df_emp,
+                 salary_feels = factor(GrossPay > 50000, 
+                                       labels = c("small salary", "big salary")))
+salary_size <- group_by(df_emp,
+                        salary_feels)
+salary_size
+```
+
+## summarise
+
+```{r}
+summarise(salary_size,
+          avg_salary = mean(GrossPay, na.rm = TRUE))
+
+```
+
+Extract year from the date variable:
+
+```{r}
+df_emp$HireDate <- as.POSIXlt(df_emp$HireDate,
+                              format = "%Y/%m/%d %H:%M:%S")
+df_emp <- mutate(df_emp,
+                 hire_year = format(HireDate, format = "%Y"))
+years <- group_by(df_emp,
+                  hire_year)
+years
+```
+
+## pipline operator %\>%
+
+The idea is that with the pipeline we can do the sequence of calls without specifying extra variables and lines:
+
+```{r}
+df_emp %>% mutate(hire_month = format(HireDate, format = "%m")) %>% group_by(hire_month) %>% summarise(mean_sal = mean(AnnualSalary, na.rm = T), mean_gross_sal = mean(GrossPay, na.rm = T))
+```
+
+# Merging data
+
+By default it merges all the columns that have the same column name.
+
+To merge data we have to follow this syntax:
+
+`merged_data <- merge(x_dataframe, y_dataframe, by.x = X_column, by.y = Y_column, all = TRUE)`
+
+To get common columns of the dataframes:
+
+`intersect(names(X_dataframe), names(Y_dataframe))`
+
+> Regards to that as a **default** it merges on ***all the columns with the same names***, something can be done like this
+
+`merge(X_dataframe, Y_dataframe, all = TRUE)`
+
+**Faster** way of merging dataframes is ***join (plyr pack.).***
+
+`arrange(join(X_dataframe,``Y_dataframe), common_field)`
+
+Joining **multiple** dataframes on the basis of the common column:
+
+`df_list <- list(``X_dataframe, Y_dataframe, Z_dataframe)`
+
+`join_all(df_list)`
+
+
+# TEST 3
+
+1.
+```{r}
+csv_url_1 <- "https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2Fss06hid.csv"
+df_1 <- read.csv(csv_url_1)
+head(df_1)
+```
+```{r}
+agricultureLogical <- df_1$ACR == 3 & df_1$AGS == 6
+which(agricultureLogical)
+```
+```{r}
+install.packages("jpeg")
+```
+
+```{r}
+library(jpeg)
+jpeg_url <- "https://d396qusza40orc.cloudfront.net/getdata%2Fjeff.jpg"
+jpeg_path_to <- "./out/task2_jpeg.jpeg"
+download.file(jpeg_url,
+              jpeg_path_to,
+              mode = "wb")
+jpeg_img <- readJPEG(jpeg_path_to,
+                     native = TRUE)
+quantile(jpeg_img,
+          probs = c(0.3, 0.8))
+
+```
+
