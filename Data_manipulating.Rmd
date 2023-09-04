@@ -489,27 +489,29 @@ To get common columns of the dataframes:
 
 **Faster** way of merging dataframes is ***join (plyr pack.).***
 
-`arrange(join(X_dataframe,``Y_dataframe), common_field)`
+``` arrange(join(X_dataframe,``Y_dataframe), common_field) ```
 
 Joining **multiple** dataframes on the basis of the common column:
 
-`df_list <- list(``X_dataframe, Y_dataframe, Z_dataframe)`
+``` df_list <- list(``X_dataframe, Y_dataframe, Z_dataframe) ```
 
 `join_all(df_list)`
 
-
 # TEST 3
 
-1.
+1.  
+
 ```{r}
 csv_url_1 <- "https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2Fss06hid.csv"
 df_1 <- read.csv(csv_url_1)
 head(df_1)
 ```
+
 ```{r}
 agricultureLogical <- df_1$ACR == 3 & df_1$AGS == 6
 which(agricultureLogical)
 ```
+
 ```{r}
 install.packages("jpeg")
 ```
@@ -527,4 +529,3 @@ quantile(jpeg_img,
           probs = c(0.3, 0.8))
 
 ```
-
